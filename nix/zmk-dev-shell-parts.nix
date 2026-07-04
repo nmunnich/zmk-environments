@@ -3,12 +3,16 @@
 # Enhances the build environment passed in (expected to be 
 # from zmk-build-toolchain.nix) with additional packages and environment
 # variables for local development, debugging, and testing.
-{ pkgs, lib, zmkBuildToolchain, zmkValidationParts }:
+{ pkgs, lib, zmkBuildToolchain }:
+let
+  # Preserve the Zephyr Python environment so west stays available.
+  devPythonEnv = zmkBuildToolchain.pythonEnv;
+in
 {
   zmkDevTools =
     zmkBuildToolchain.zmkBaseTools
     ++ [
-      zmkValidationParts.validationPythonEnv
+      devPythonEnv
       zmkBuildToolchain.sdkAll
       pkgs.SDL2
       pkgs.cacert
@@ -19,9 +23,11 @@
       pkgs.gnupg
       pkgs.less
       pkgs.nano
-      pkgs.nodejs_20
+      pkgs.nodejs_24
       pkgs.python3
       pkgs.python3Packages.pip
+      pkgs.python3Packages.remarshal
+      pkgs.python3Packages.jsonschema
       pkgs.python3Packages.setuptools
       pkgs.python3Packages.wheel
       pkgs.socat
@@ -35,7 +41,7 @@
     ];
 
   zmkDevEnv = {
-    PYTHONPATH = "${zmkValidationParts.validationPythonEnv}/${zmkValidationParts.validationPythonEnv.sitePackages}";
+    PYTHONPATH = "${devPythonEnv}/${devPythonEnv.sitePackages}";
     ZEPHYR_SDK_INSTALL_DIR = "${zmkBuildToolchain.sdkAll}";
   };
 

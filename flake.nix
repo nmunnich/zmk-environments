@@ -1,5 +1,5 @@
 {
-  description = "ZMK build, test, and development shell environments";
+  description = "ZMK build and development shell environments";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -17,10 +17,6 @@
     zephyr-nix,
     ...
   }: let
-    # Building the Docker images requires a Linux host.
-    dockerSystems = ["x86_64-linux" "aarch64-linux"];
-    forDockerSystems = nixpkgs.lib.genAttrs dockerSystems;
-
     shellSystems = ["x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin"];
     forShellSystems = nixpkgs.lib.genAttrs shellSystems;
 
@@ -30,44 +26,15 @@
       zephyrNix = zephyr-nix.packages.${system};
     in
       import ./nix/zmk-build-toolchain.nix {inherit pkgs lib zephyrNix;};
-
-    mkImageBuilder = system:
-      import ./nix/image-builder.nix {
-        pkgs = nixpkgs.legacyPackages.${system};
-      };
   in {
     # -------------------------------------------------------------------------
-    # Docker images
-    # -------------------------------------------------------------------------
-    packages = forDockerSystems (system: let
-      pkgs = nixpkgs.legacyPackages.${system};
-      lib = pkgs.lib;
-      zmkBuildToolchain = mkZMKBuildToolchain system;
-      imageBuilder = mkImageBuilder system;
-      zmkValidationParts = import ./nix/zmk-validation-parts.nix {inherit pkgs lib zmkBuildToolchain;};
-    in {
-      zmk-build-arm-image = imageBuilder {
-        name = "zmk-build-arm";
-        paths = zmkBuildToolchain.zmkBuildTools;
-        env = zmkBuildToolchain.zmkBuildEnvWithSdk zmkBuildToolchain.sdkArm;
-      };
-
-      zmk-validation-image = imageBuilder {
-        name = "zmk-validation";
-        paths = zmkValidationParts.zmkValidationTools;
-        env = zmkValidationParts.zmkValidationEnv;
-      };
-    });
-
-    # -------------------------------------------------------------------------
-    # Development and build shells
+    # Build and development shells
     # -------------------------------------------------------------------------
     devShells = forShellSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       lib = pkgs.lib;
       zmkBuildToolchain = mkZMKBuildToolchain system;
-      zmkValidationParts = import ./nix/zmk-validation-parts.nix {inherit pkgs lib zmkBuildToolchain;};
-      zmkDevShellParts = import ./nix/zmk-dev-shell-parts.nix {inherit pkgs lib zmkBuildToolchain zmkValidationParts;};
+      zmkDevShellParts = import ./nix/zmk-dev-shell-parts.nix {inherit pkgs lib zmkBuildToolchain;};
     in {
       build = pkgs.mkShellNoCC {
         packages = zmkBuildToolchain.zmkBuildTools;

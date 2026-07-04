@@ -13,11 +13,8 @@ let
   # Python environments
   # ---------------------------------------------------------------------------
   zephyrPythonEnv = zephyrNix.pythonEnv;
-  pythonEnv = zephyrPythonEnv.withPackages (ps: [
-    ps.cmake
-    ps.protobuf
-    ps."grpcio-tools"
-  ]);
+  # Keep Zephyr's curated Python environment intact so tools like west remain available.
+  pythonEnv = zephyrPythonEnv;
 
   # ---------------------------------------------------------------------------
   # build & core tools
@@ -44,11 +41,6 @@ let
 
   zmkBuildTools = zmkBaseTools ++ [pythonEnv sdkArm];
 
-  zmkBuildEnvWithSdk = sdkPkg: [
-    "PYTHONPATH=${pythonEnv}/${pythonEnv.sitePackages}"
-    "ZEPHYR_SDK_INSTALL_DIR=${sdkPkg}"
-  ];
-
   zmkBuildShellHook = ''
   '';
 
@@ -63,7 +55,6 @@ in {
     pythonEnv
     zmkBaseTools
     zmkBuildTools
-    zmkBuildEnvWithSdk
     zmkBuildShellHook
     zmkBuildShellEnvWithSdk
     ;
